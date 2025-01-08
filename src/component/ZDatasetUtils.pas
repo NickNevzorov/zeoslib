@@ -1227,13 +1227,20 @@ function DefineKeyFields(Fields: TFields; const IdConverter: IZIdentifierConvert
 var
   I: Integer;
 begin
-  Result := '';
+  Result := ''; 
   for I := 0 to Fields.Count - 1 do
   begin
-    if (Fields[I].FieldKind = fkData)
+    if (Fields[I].FieldKind = fkData) and (pfInKey in Fields[I].ProviderFlags) // checking provider flags when locate ercord
       and not (Fields[I].DataType in [ftBlob, ftGraphic, ftMemo, ftBytes, ftVarBytes {$IFDEF WITH_WIDEMEMO}, ftWideMemo{$ENDIF}]) then
       AppendSepString(Result, IdConverter.Quote(Fields[I].FieldName, iqColumn), ',');
   end;
+  if Result = '' then
+    for I := 0 to Fields.Count - 1 do
+    begin
+      if (Fields[I].FieldKind = fkData)
+        and not (Fields[I].DataType in [ftBlob, ftGraphic, ftMemo, ftBytes, ftVarBytes {$IFDEF WITH_WIDEMEMO}, ftWideMemo{$ENDIF}]) then
+        AppendSepString(Result, IdConverter.Quote(Fields[I].FieldName, iqColumn), ',');
+    end;
 end;
 
 {$IFDEF FPC}
