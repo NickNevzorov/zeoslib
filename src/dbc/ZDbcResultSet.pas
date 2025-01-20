@@ -1409,7 +1409,8 @@ type
       const OpenLobStreams: TZSortedList);
     destructor Destroy; override;
     function Write(const Buffer; Count: Longint): Longint; override;
-  end;
+    function Write(const Buffer: TBytes; Offset, Count: Longint): Longint; overload; override;
+end;
 
   {** EH: implements a readonly stream
     use it for MySQL(store_result) or Postgres <> non single_row_mode
@@ -5338,9 +5339,17 @@ begin
   FUpdated := True;
 end;
 
+function TZVarVarLenDataRefStream.Write(const Buffer: TBytes; Offset, Count: Integer): Longint;
+begin
+  FUpdated := True;
+  Capacity := Count; // Need to realloc FVarLenDataRef.VarLenData
+  Result := inherited Write(Buffer, Offset, Count);
+end;
+
 function TZVarVarLenDataRefStream.Write(const Buffer; Count: Longint): Longint;
 begin
   FUpdated := True;
+  Capacity := Count; // Need to realloc FVarLenDataRef.VarLenData
   Result := inherited Write(Buffer, Count);
 end;
 
