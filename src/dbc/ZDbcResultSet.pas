@@ -5299,10 +5299,10 @@ var P: Pointer;
   PA: PAnsiChar;
   Idx: Integer;
 begin
-  P := FVarLenDataRef.VarLenData;
-  FVarLenDataRef.VarLenData := nil; //do not relloc memory on destruction
   if FUpdated then
     FOwner.SetUpdated(True);
+  P := FVarLenDataRef.VarLenData;
+  FVarLenDataRef.VarLenData := nil; //do not relloc memory on destruction
   inherited; //calls realloc
   FVarLenDataRef.VarLenData := P; //the memory is owned by lob or reference
   { now add a null term for Postgres f.e.}
