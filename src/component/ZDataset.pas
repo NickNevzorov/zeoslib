@@ -78,6 +78,7 @@ type
     property IndexFieldNames; {bangfauzan addition}
     property Options default [doPreferPrepared];
     property Transaction;
+    property TryKeepDataOnDisconnect default False;
   end;
 
   {** Implements an universal SQL query for read/write data access. }
