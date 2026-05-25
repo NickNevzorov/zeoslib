@@ -107,10 +107,10 @@ type
     function CreateException(const  Msg: string): EZSQLException;
     procedure CheckIndex(const Index: Word);
     procedure CheckRange(const Index: Word);
-    procedure SetFieldType(const Index: Word; ASAType: Smallint; Len: LongWord); overload;
-    procedure SetFieldType(ToSQLDA: PASASQLDA; const Index: Word; ASAType: Smallint; Len: LongWord); overload;
+    procedure SetFieldType(const Index: Word; ASAType: Smallint; Len: Cardinal); overload;
+    procedure SetFieldType(ToSQLDA: PASASQLDA; const Index: Word; ASAType: Smallint; Len: Cardinal); overload;
   protected
-    procedure ReadBlob(const Index: Word; var Buffer: Pointer; Length: LongWord);
+    procedure ReadBlob(const Index: Word; var Buffer: Pointer; Length: Cardinal);
   public
     constructor Create(const Connection: IZASAConnection;
       CursorName: PAnsiChar; NumVars: Word = StdVars);
@@ -211,7 +211,7 @@ begin
 end;
 
 procedure TZASASQLDA.SetFieldType(ToSQLDA: PASASQLDA; const Index: Word;
-  ASAType: Smallint; Len: LongWord);
+  ASAType: Smallint; Len: Cardinal);
 begin
   CheckIndex(Index);
   with ToSQLDA.sqlvar[Index] do
@@ -250,7 +250,7 @@ begin
 end;
 
 procedure TZASASQLDA.SetFieldType(const Index: Word; ASAType: Smallint;
-  Len: LongWord);
+  Len: Cardinal);
 begin
   SetFieldType(FSQLDA, Index, ASAType, Len);
 end;
@@ -494,10 +494,10 @@ begin
 end;
 
 procedure TZASASQLDA.ReadBlob(const Index: Word; var Buffer: Pointer;
-  Length: LongWord);
+  Length: Cardinal);
 var
   TempSQLDA: PASASQLDA;
-  Offs, Rd: LongWord;
+  Offs, Rd: Cardinal;
 const
   BlockSize = 32700;
 begin

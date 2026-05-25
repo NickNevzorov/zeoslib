@@ -73,7 +73,7 @@ type
     function SupportsTrim: Boolean;
     function SupportsBinaryInSQL: Boolean;
 
-    function GetMaxSQLDASize: LongWord;
+    function GetMaxSQLDASize: Cardinal;
 
     procedure CollectServerInformations;
   End;
@@ -93,7 +93,7 @@ type
     function SupportsNextValueFor: Boolean;
     function SupportsTrim: Boolean;
     function SupportsBinaryInSQL: Boolean;
-    function GetMaxSQLDASize: LongWord;
+    function GetMaxSQLDASize: Cardinal;
     // database/driver/server info:
     /// <summary>What's the name of this database product?</summary>
     /// <returns>database product name</returns>
@@ -523,7 +523,7 @@ begin
 end;
 
 // Increased size for FB 3.0+
-function TZInterbase6DatabaseInfo.GetMaxSQLDASize: LongWord;
+function TZInterbase6DatabaseInfo.GetMaxSQLDASize: Cardinal;
 begin
   if FIsFireBird and (FHostVersion >= 3000000) then
     Result := 10*1024*1024 //might be much more! 4GB? 10MB sounds enough / roundtrip

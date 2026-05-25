@@ -60,6 +60,8 @@ uses
   {$IFDEF UNIX}
     dynlibs,
   {$endif}
+{$ELSE}
+  {$IFDEF MSWINDOWS}Windows, {$ELSE}Posix.StdDef,{$ENDIF}
 {$ENDIF}
   Classes,
   {$IFDEF MSEgui}mclasses,{$ENDIF}
@@ -129,6 +131,10 @@ type
 {$ENDIF}
   {$IF not declared(PLongBool)}
   PLongBool = ^LongBool;
+  {$IFEND}
+  {$IFNDEF FPC}{$IF NOT DECLARED(size_t)}size_t = Cardinal;{$IFEND}{$ENDIF} // For older Delphis
+  {$IF NOT DECLARED(Psize_t)}
+  Psize_t = ^size_t;
   {$IFEND}
 
   UInt                  = Cardinal; // See Bugreport #648 for the exact reason
@@ -564,7 +570,9 @@ begin
     Result := (Result shl 5) or (Result shr 27);
     Result := Result xor Cardinal(key[I]);
   end;
-end; { Hash }
+end;
+
+{ Hash }
 
 { ported from http://stofl.org/questions/3690608/simple-string-hashing-function}
 //perform a MurmurHash2 algorithm by Austin Appleby loads faster (4Byte aligned)
@@ -574,8 +582,8 @@ end; { Hash }
 //function MurmurHash2(const S: RawByteString; const Seed: LongWord=$9747b28c): LongWord;
 function Hash(const S: RawByteString): Cardinal;
 var
-  k: LongWord;
-  Len: LongWord;
+  k: Cardinal;
+  Len: Cardinal;
   P, PEnd: PAnsiChar;
 const
   // 'm' and 'r' are mixing constants generated offline.

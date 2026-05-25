@@ -2720,7 +2720,7 @@ end;
 function TZOracleResultSet.Next: Boolean;
 var
   Status: Integer;
-  FetchedRows: LongWord;
+  FetchedRows: Cardinal;
   procedure LogExecution;
   var iLO: IZLoggingObject;
   begin

@@ -57,7 +57,7 @@ interface
 
 {$IFNDEF ZEOS_DISABLE_POSTGRESQL}
 
-uses ZCompatibility, ZPlainDriver;
+uses ZCompatibility, ZPlainDriver{$IFNDEF FPC}{$IFDEF MSWINDOWS}, Windows{$ELSE}, Posix.StdDef{$ENDIF}{$ENDIF};
 
 const
   WINDOWS_DLL_LOCATION   = 'libpq.dll';
@@ -768,22 +768,22 @@ type
     PQclear         : procedure(res: TPGresult); cdecl;
     PQmakeEmptyPGresult  : function(conn: TPGconn; status: TZPostgreSQLExecStatusType): TPGresult; cdecl;
     PQescapeStringConn : function(conn: TPGconn; ToChar: PAnsiChar;
-      const FromChar: PAnsiChar; length: NativeUInt; error: PInteger): NativeUInt;cdecl; //7.3
-    PQescapeLiteral    : function(conn: TPGconn; str: PAnsiChar; len: NativeUInt): PAnsiChar;cdecl;
-    PQescapeIdentifier : function(conn: TPGconn; str: PAnsiChar; len: NativeUInt): PAnsiChar;cdecl; //7.3
-    PQescapeByteaConn  : function(conn: TPGconn; from: PAnsiChar; from_length: longword; to_lenght: PLongword): PAnsiChar;cdecl;
-    PQunescapeBytea    : function(const from:PAnsiChar;to_lenght:PLongword):PAnsiChar;cdecl;
+      const FromChar: PAnsiChar; length: size_t; error: PInteger): size_t;cdecl; //7.3
+    PQescapeLiteral    : function(conn: TPGconn; str: PAnsiChar; len: size_t): PAnsiChar;cdecl;
+    PQescapeIdentifier : function(conn: TPGconn; str: PAnsiChar; len: size_t): PAnsiChar;cdecl; //7.3
+    PQescapeByteaConn  : function(conn: TPGconn; from: PAnsiChar; from_length: size_t; to_lenght: Psize_t): PAnsiChar;cdecl;
+    PQunescapeBytea    : function(const strtext:PAnsiChar;retbuflen:Psize_t):PAnsiChar;cdecl;
     PQFreemem          : procedure(ptr:Pointer);cdecl;
     PQisthreadsafe     : function: Integer; cdecl;
     //* These forms are deprecated! */
-    PQescapeString     : function(ToChar: PAnsiChar; const FormChar: PAnsiChar; length: NativeUInt): NativeUInt;cdecl; //7.2
-    PQescapeBytea      : function(const from:PAnsiChar;from_length:longword;to_lenght:PLongword):PAnsiChar;cdecl; //7.2
+    PQescapeString     : function(ToChar: PAnsiChar; const FromChar: PAnsiChar; length: size_t): size_t;cdecl; //7.2
+    PQescapeBytea      : function(const from:PAnsiChar;from_length:size_t;to_lenght:Psize_t):PAnsiChar;cdecl; //7.2
 
     { === in fe-lobj.c === }
     lo_open         : function(conn: TPGconn; lobjId: Oid; mode: Integer): Integer; cdecl;
     lo_close        : function(conn: TPGconn; fd: Integer): Integer; cdecl;
-    lo_read         : function(conn: TPGconn; fd: Integer; buf: PAnsiChar; len: NativeUInt): Integer; cdecl;
-    lo_write        : function(conn: TPGconn; fd: Integer; buf: PAnsiChar; len: NativeUInt): Integer; cdecl;
+    lo_read         : function(conn: TPGconn; fd: Integer; buf: PAnsiChar; len: size_t): Integer; cdecl;
+    lo_write        : function(conn: TPGconn; fd: Integer; buf: PAnsiChar; len: size_t): Integer; cdecl;
     lo_lseek        : function(conn: TPGconn; fd, offset, whence: Integer): Integer; cdecl;
     lo_lseek64      : function(conn: TPGconn; fd: integer; offset: Int64; whence: Integer): Int64; cdecl;
     lo_creat        : function(conn: TPGconn; mode: Integer): Oid; cdecl;
@@ -791,7 +791,7 @@ type
     lo_unlink       : function(conn: TPGconn; lobjId: Oid): Integer; cdecl;
     lo_import       : function(conn: TPGconn; filename: PAnsiChar): Oid; cdecl;
     lo_export       : function(conn: TPGconn; lobjId: Oid; filename: PAnsiChar): Integer; cdecl;
-    lo_truncate     : function(conn: TPGconn; fd: Integer; len: NativeInt): Integer; cdecl;
+    lo_truncate     : function(conn: TPGconn; fd: Integer; len: size_t): Integer; cdecl;
     lo_truncate64   : function(conn: TPGconn; fd: Integer; len: Int64): Integer; cdecl;
   end;
 

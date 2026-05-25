@@ -137,7 +137,7 @@ procedure ConvertMySQLColumnInfoFromString(var TypeName: RawByteString;
 function GetMySQLOptionValue(Option: TMySQLOption): string;
 
 function ReverseWordBytes(Src: Pointer): Word;
-function ReverseLongWordBytes(Src: Pointer; Len: Byte): LongWord;
+function ReverseLongWordBytes(Src: Pointer; Len: Byte): Cardinal;
 function ReverseQuadWordBytes(Src: Pointer; Len: Byte): UInt64;
 
 type

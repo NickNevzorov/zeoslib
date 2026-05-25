@@ -8520,8 +8520,8 @@ procedure GetCPUFeatures;
   2. GetCPUVendor must have been called }
 type
  _Int64 = packed record
-  Lo: Longword;
-  Hi: Longword;
+  Lo: Cardinal;
+  Hi: Cardinal;
  end;
 var
  Registers: TRegisters;
@@ -8593,8 +8593,8 @@ procedure GetCPUExtendedFeatures;
 { preconditions: maximum extended CPUID >= $80000001 }
 type
  _Int64 = packed record
-  Lo: Longword;
-  Hi: Longword;
+  Lo: Cardinal;
+  Hi: Cardinal;
  end;
 var
  Registers: TRegisters;

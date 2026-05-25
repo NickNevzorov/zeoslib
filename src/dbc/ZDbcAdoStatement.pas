@@ -251,12 +251,12 @@ begin
       VT_UI1:           SQLWriter.AddOrd(PByte(ValueAddr)^, Result);
       VT_UI2:           SQLWriter.AddOrd(PWord(ValueAddr)^, Result);
       VT_UI4:           SQLWriter.AddOrd(PCardinal(ValueAddr)^, Result);
-      VT_UINT:          SQLWriter.AddOrd(PLongWord(ValueAddr)^, Result);
+      VT_UINT:          SQLWriter.AddOrd(PCardinal(ValueAddr)^, Result);
       VT_I1:            SQLWriter.AddOrd(PShortInt(ValueAddr)^, Result);
       VT_I2:            SQLWriter.AddOrd(PSmallInt(ValueAddr)^, Result);
       VT_ERROR,
       VT_I4:            SQLWriter.AddOrd(PInteger(ValueAddr)^, Result);
-      VT_INT:           SQLWriter.AddOrd(PLongInt(ValueAddr)^, Result);
+      VT_INT:           SQLWriter.AddOrd(PInteger(ValueAddr)^, Result);
       VT_HRESULT:       SQLWriter.AddOrd(PHResult(ValueAddr)^, Result);
       VT_UI8:           SQLWriter.AddOrd(PUInt64(ValueAddr)^, Result);
       VT_I8:            SQLWriter.AddOrd(PInt64(ValueAddr)^, Result);

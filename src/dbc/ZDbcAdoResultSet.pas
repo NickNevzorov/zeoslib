@@ -227,12 +227,12 @@ begin
         VT_UI1:         ResultsWriter.AddU(PByte(FValueAddr)^);
         VT_UI2:         ResultsWriter.AddU(PWord(FValueAddr)^);
         VT_UI4:         ResultsWriter.AddU(PCardinal(FValueAddr)^);
-        VT_UINT:        ResultsWriter.AddU(PLongWord(FValueAddr)^);
+        VT_UINT:        ResultsWriter.AddU(PCardinal(FValueAddr)^);
         VT_I1:          ResultsWriter.Add(PShortInt(FValueAddr)^);
         VT_I2:          ResultsWriter.Add(PSmallInt(FValueAddr)^);
         VT_ERROR,
         VT_I4:          ResultsWriter.Add(PInteger(FValueAddr)^);
-        VT_INT:         ResultsWriter.Add(PLongInt(FValueAddr)^);
+        VT_INT:         ResultsWriter.Add(PInteger(FValueAddr)^);
         VT_HRESULT:     ResultsWriter.Add(PHResult(FValueAddr)^);
         VT_UI8:         ResultsWriter.AddQ(PUInt64(FValueAddr)^);
         VT_I8:          ResultsWriter.Add(PInt64(FValueAddr)^);
@@ -1229,7 +1229,7 @@ begin
     VT_UI1:         ScaledOrdinal2Bcd(Word(PByte(FValueAddr)^), 0, Result, False);
     VT_UI2:         ScaledOrdinal2Bcd(PWord(FValueAddr)^, 0, Result, False);
     VT_UI4:         ScaledOrdinal2Bcd(PCardinal(FValueAddr)^, 0, Result, False);
-    VT_UINT:        ScaledOrdinal2Bcd(PLongWord(FValueAddr)^, 0, Result, False);
+    VT_UINT:        ScaledOrdinal2Bcd(PCardinal(FValueAddr)^, 0, Result, False);
     VT_UI8:         ScaledOrdinal2Bcd(PUInt64(FValueAddr)^, 0, Result, False);
     VT_I1:          ScaledOrdinal2Bcd(SmallInt(PShortInt(FValueAddr)^), 0, Result);
     VT_I2:          ScaledOrdinal2Bcd(PSmallInt(FValueAddr)^, 0, Result);
@@ -1237,7 +1237,7 @@ begin
     VT_ERROR,
     VT_I4:          ScaledOrdinal2Bcd(PInteger(FValueAddr)^, 0, Result);
     VT_I8:          ScaledOrdinal2Bcd(PInt64(FValueAddr)^, 0, Result);
-    VT_INT:         ScaledOrdinal2Bcd(PLongInt(FValueAddr)^, 0, Result);
+    VT_INT:         ScaledOrdinal2Bcd(PInteger(FValueAddr)^, 0, Result);
     VT_CY:          ScaledOrdinal2Bcd(PInt64(FValueAddr)^, 4, Result);
     VT_DECIMAL:     ScaledOrdinal2Bcd(UInt64(PDecimal(FValueAddr)^.Lo64), PDecimal(FValueAddr)^.Scale, Result, PDecimal(FValueAddr)^.Sign > 0);
     VT_R4:          Double2BCD(PSingle(FValueAddr)^, Result);

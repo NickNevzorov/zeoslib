@@ -66,7 +66,7 @@ uses
   FmtBCD, Classes, {$IFDEF MSEgui}mclasses,{$ENDIF} SysUtils,
   ZSysUtils, ZDbcIntfs, ZDbcResultSet, ZPlainPostgreSqlDriver, ZDbcLogging,
   ZDbcResultSetMetadata, ZCompatibility, ZDbcCache, ZDbcGenericResolver,
-  ZClasses, ZDbcCachedResultSet, ZDbcPostgreSql, ZExceptions;
+  ZClasses, ZDbcCachedResultSet, ZDbcPostgreSql, ZExceptions{$IFNDEF FPC}{$IFDEF MSWINDOWS}, Windows{$ELSE}, Posix.StdDef{$ENDIF}{$ENDIF};
 
 type
   {** Implements a specialized cached resolver for PostgreSQL. }
@@ -1237,7 +1237,7 @@ begin
 end;
 
 function TZPostgreSQLResultSet.GetPAnsiChar(ColumnIndex: Integer; out Len: NativeUInt): PAnsiChar;
-var L: LongWord;
+var MyLen: size_t;
   PEnd: PAnsiChar;
   BCD: TBCD;
   TS: TZTimeStamp absolute BCD;
@@ -1406,8 +1406,8 @@ jmpTS:                Result := PAnsiChar(fByteBuffer);
                   HexToBin(Result+2, Pointer(FRawTemp), Len);
                   Result := Pointer(FRawTemp);
                 end else if Assigned(FPlainDriver.PQUnescapeBytea) then begin
-                  Result := FPlainDriver.PQUnescapeBytea(Result, @L);
-                  ZSetString(Result, L, FRawTemp);
+                  Result := FPlainDriver.PQUnescapeBytea(Result, @MyLen);
+                  ZSetString(Result, MyLen, FRawTemp);
                   Len := Length(FRawTemp);
                   FPlainDriver.PQFreemem(Result);
                   Result := Pointer(FRawTemp);
@@ -1674,7 +1674,7 @@ function TZPostgreSQLResultSet.GetBytes(ColumnIndex: Integer;
   out Len: NativeUInt): PByte;
 var
   pgBuff: PAnsiChar;
-  to_lenght: LongWord;
+  to_lenght: size_t;
   TempLob: IZBLob;
   ResUUID: PGUID absolute Result;
   SrcUUID: PGUID absolute pgBuff;
@@ -2696,7 +2696,7 @@ end;
 constructor TZPostgreSQLByteaEscapedBlob.Create(const PlainDriver: TZPostgreSQLPlainDriver;
   Data: PAnsiChar);
 var
-  to_length: LongWord;
+  to_length: size_t;
   pgBuffer: Pointer;
 begin
   inherited Create;

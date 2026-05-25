@@ -24,8 +24,8 @@ type
 
   IXMLNodeList = interface(IUnknown)
   ['{01CDB783-479A-4204-962B-EBC52D749737}']
-    function Get(Index: LongWord): IXMLNode;
-    procedure Delete(Index: LongWord);
+    function Get(Index: Cardinal): IXMLNode;
+    procedure Delete(Index: Cardinal);
     function FindNode(NodeName: DOMString): IXMLNode;
     function Count: Cardinal;
   end;
@@ -63,10 +63,10 @@ type
       FParentNode: TDOMNode;
     public
       constructor Create(ParentNode: TDOMNode);
-      function Get(Index: LongWord): IXMLNode;
-      procedure Delete(Index: LongWord);
+      function Get(Index: Cardinal): IXMLNode;
+      procedure Delete(Index: Cardinal);
       function FindNode(NodeName: DOMString): IXMLNode;
-      function Count: LongWord;
+      function Count: Cardinal;
   end;
 
 {$ENDIF}
@@ -98,12 +98,12 @@ begin
   FParentNode := ParentNode;
 end;
 
-function TZXmlNodeList.Get(Index: LongWord): IXMLNode;
+function TZXmlNodeList.Get(Index: Cardinal): IXMLNode;
 begin
   Result := TZXmlNode.Create(FParentNode.ChildNodes.Item[Index]);
 end;
 
-procedure TZXmlNodeList.Delete(Index: LongWord);
+procedure TZXmlNodeList.Delete(Index: Cardinal);
 var
   Node: TDOMNode;
 begin
@@ -123,7 +123,7 @@ begin
     Result := nil;
 end;
 
-function TZXmlNodeList.Count: LongWord;
+function TZXmlNodeList.Count: Cardinal;
 begin
   Result := FParentNode.ChildNodes.Count;
 end;

@@ -261,7 +261,7 @@ end;
 
 procedure TZAbstractASAStatement.Prepare;
 var DBHandle: PZASASQLCA;
-  WhatToDesc: LongWord;
+  WhatToDesc: Cardinal;
 begin
   if not Prepared then begin
     RestartTimer;

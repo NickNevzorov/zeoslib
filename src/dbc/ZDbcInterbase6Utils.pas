@@ -887,7 +887,7 @@ begin
   end else begin
     Precision := GetOrdinalDigits(Value);
     if Precision <= Scale then begin
-      PLongWord(Buf)^ := Ord('0')+Ord('.') shl 16; //write "0."
+      PCardinal(Buf)^ := Ord('0')+Ord('.') shl 16; //write "0."
       Inc(Buf, 2);
       for i := 0 to Scale-Precision-1 do begin  //eh: opt? 2/4 digit's per loop?
         PWord(Buf)^ := Ord('0');
@@ -947,7 +947,7 @@ begin
   end else begin
     Precision := GetOrdinalDigits(Value);
     if Precision <= Scale then begin
-      PLongWord(Buf)^ := Ord('0')+Ord('.') shl 16; //write "0."
+      PCardinal(Buf)^ := Ord('0')+Ord('.') shl 16; //write "0."
       Inc(Buf, 2);
       for i := 0 to Scale-Precision-1 do begin  //eh: opt? 2/4 digit's per loop?
         PWord(Buf)^ := Ord('0');
