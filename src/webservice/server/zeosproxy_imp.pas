@@ -193,6 +193,7 @@ var
   Connection: IZConnection;
   Url: String;
   PropertiesList: TStringList;
+  MaxAge: Integer;
 Begin
   if not Assigned(ConfigManager) then raise
     Exception.Create('Config Manager is not assigned...');
@@ -202,20 +203,29 @@ Begin
   try
     Logger.Debug('Getting Zeos connection...');
     Connection := DriverManager.GetConnectionWithParams(UTF8Encode(Url), PropertiesList);
+
+    PropertiesList.Text := UTF8Encode(InProperties);
+    applyConnectionProperties(Connection, PropertiesList);
+    OutProperties := UnicodeString(encodeConnectionProperties(Connection));
+    Connection.Open;
+    DbInfo := UnicodeString(encodeDatabaseInfo(Connection));
+    if Assigned(zeosproxy_cbor_imp.CborImp) then;
+      OutProperties := OutProperties + LineEnding + 'proxy_supportscborquery=true';
+    MaxAge := StrToIntDef(PropertiesList.Values['maxage'], 0);
+    if MaxAge < 0 then
+      MaxAge := 0;
+    if MaxAge > (60 * 60 * 24 * 365) then
+      MaxAge := 0;
+    Result := UnicodeString(ConnectionManager.AddConnection(Connection, UTF8Encode(DbName), UTF8Encode(UserName), MaxAge));
+    if not Assigned(AuditLogger) then
+      raise Exception.Create('Audit logger is not assigned.');
+    AuditLogger.LogLine('Connect');
   finally
     FreeAndNil(PropertiesList);
+    Connection := nil;
   end;
 
-  applyConnectionProperties(Connection, UTF8Encode(InProperties));
-  OutProperties := UnicodeString(encodeConnectionProperties(Connection));
-  Connection.Open;
-  DbInfo := UnicodeString(encodeDatabaseInfo(Connection));
-  if Assigned(zeosproxy_cbor_imp.CborImp) then;
-    OutProperties := OutProperties + LineEnding + 'proxy_supportscborquery=true';
-  Result := UnicodeString(ConnectionManager.AddConnection(Connection, DbName, UserName));
-  if not Assigned(AuditLogger) then
-    raise Exception.Create('Audit logger is not assigned.');
-  AuditLogger.LogLine('Connect');
+
 End;
 
 procedure TZeosProxy_ServiceImp.Disconnect(
@@ -276,10 +286,18 @@ function TZeosProxy_ServiceImp.SetProperties(
   const  ConnectionID : UnicodeString; 
   const  Properties : UnicodeString
 ):UnicodeString;
+var
+  List: TStringList;
 Begin
   with ConnectionManager.LockConnection(Utf8Encode(ConnectionID)) do
   try
-    applyConnectionProperties(ZeosConnection, UTF8Encode(Properties));
+    List := TStringList.Create;
+    try
+      List.Text := UTF8Encode(Properties);
+      applyConnectionProperties(ZeosConnection, List);
+    finally
+      FreeAndNil(List);
+    end;
     Result := UnicodeString(encodeConnectionProperties(ZeosConnection));
   finally
     Unlock;
@@ -314,7 +332,13 @@ begin
     end else
       Result := UnicodeString(IntToStr(Statement.GetUpdateCount));
   finally
+    if Assigned(ResultSet) then
+      if not ResultSet.IsClosed
+        then ResultSet.Close;
     ResultSet := nil;
+    if Assigned(Statement) then
+      if not Statement.IsClosed
+        then Statement.Close;
     Statement := nil;
   end;
 end;
@@ -726,11 +750,11 @@ Begin
 End;
 
 initialization
-  {$IFDEF WINDOWS}
+  {$IF DEFINED(WINDOWS) OR DEFINED(ENABLE_DEBUG_SETTINGS)}
   AuditLogger := TDbcProxyFileLogger.Create(ExtractFilePath(ParamStr(0)) + 'audit.log');
   {$ELSE}
   AuditLogger := TDbcProxyFileLogger.Create('/var/log/' + ExtractFileName(ParamStr(0)) + '.audit.log');
-  {$ENDIF}
+  {$IFEND}
 
 finalization
   if Assigned(Logger) then

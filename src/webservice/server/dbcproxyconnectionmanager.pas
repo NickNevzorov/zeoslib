@@ -79,7 +79,7 @@ type
     function GetConnectionCount: SizeInt;
     function FindConnection(ID: String): TDbcProxyConnection;
     function GetConnection(Index: SizeInt): TDbcProxyConnection;
-    function AddConnection(Connection: IZConnection; const DatabaseName, OriginalUser: String): String;
+    function AddConnection(Connection: IZConnection; const DatabaseName, OriginalUser: String; MaxAge: Integer = 0): String;
     procedure RemoveConnection(ID: String);
     function LockConnection(ID: String): TDbcProxyConnection; overload;
     function LockConnection(Index: SizeInt): TDbcProxyConnection; overload;
@@ -91,7 +91,7 @@ type
 implementation
 
 uses
-  ZExceptions;
+  ZExceptions, DateUtils;
 
 constructor TDbcProxyConnectionManager.Create;
 begin
@@ -153,13 +153,17 @@ begin
   if Assigned(Result) then Result.Lock else raise EZSQLException.Create('No connection with Index ' + IntToStr(Index) + ' was found!');
 end;
 
-function TDbcProxyConnectionManager.AddConnection(Connection: IZConnection; const DatabaseName, OriginalUser: String): String;
+function TDbcProxyConnectionManager.AddConnection(Connection: IZConnection; const DatabaseName, OriginalUser: String; MaxAge: Integer): String;
 var
   ProxyConn: TDbcProxyConnection;
 begin
   ProxyConn := TDbcProxyConnection.Create(Connection);
   ProxyConn.DatabaseName := DatabaseName;
   ProxyConn.OriginalUser := OriginalUser;
+  if MaxAge > 0 then
+    ProxyConn.MaxTime := IncSecond(Now, MaxAge)
+  else
+    ProxyConn.MaxTime := 0;
   Result := ProxyConn.ID;
   Synchronizer.Beginwrite;
   try

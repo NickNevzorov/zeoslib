@@ -69,6 +69,7 @@ type
     FCreationTime: TDateTime;
     FOriginalUser: String;
     FDatabaseName: String;
+    FMaxTime: TDateTime;
   public
     constructor Create(AConnection: IZConnection); virtual;
     destructor Destroy; override;
@@ -79,6 +80,7 @@ type
     property CreationTime: TDateTime read FCreationTime;
     property OriginalUser: String read FOriginalUser write FOriginalUser;
     property DatabaseName: String read FDatabaseName write FDatabaseName;
+    property MaxTime: TDateTime read FMaxTime write FMaxTime;
     procedure Lock;
     procedure Unlock;
   end;
@@ -115,6 +117,7 @@ begin
   FLastAccessTime := Now;
   FCreationTime := LastAccessTime;
   FNr := GetNextSessionNr;
+  FMaxTime := 0;
 end;
 
 destructor TDbcProxyConnection.Destroy;

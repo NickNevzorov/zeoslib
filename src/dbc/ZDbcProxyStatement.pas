@@ -61,7 +61,7 @@ uses
   {$IF defined(UNICODE) and not defined(WITH_UNICODEFROMLOCALECHARS)}Windows,{$IFEND}
   ZDbcIntfs, ZDbcBeginnerStatement, ZDbcLogging,
   ZCompatibility, ZVariant, ZDbcGenericResolver, ZDbcCachedResultSet,
-  ZDbcUtils, ZExceptions;
+  {ZDbcUtils,} ZExceptions;
 
 type
   { TZProxyPreparedStatement }
@@ -136,8 +136,8 @@ implementation
 
 uses
   {$IFDEF WITH_UNITANSISTRINGS}AnsiStrings, {$ENDIF}
-  ZSysUtils, ZFastCode, ZMessages, ZDbcProxy, ZDbcProxyResultSet, ZDbcProxyUtils,
-  ZEncoding, ZTokenizer, ZClasses,
+  ZSysUtils, ZFastCode, ZMessages, ZDbcProxy, ZDbcProxyResultSet, {ZDbcProxyUtils,}
+  ZEncoding, {ZTokenizer,} ZClasses,
   {$IFNDEF FPC}
     {$IFNDEF NO_SAFECALL}ActiveX,{$ENDIF}
   {$ELSE}
@@ -315,6 +315,7 @@ begin
           stFloat, stDouble, stCurrency:
             Line := DoubleParamToStr(ClientVarManager.GetAsDouble(InParamValues[x]));
           stBigDecimal: begin
+              {$IFDEF FPC}LocalBCD := 0;{$ENDIF}
               ClientVarManager.GetAsBigDecimal(InParamValues[x], LocalBCD);
               Line := BcdParamToString(LocalBCD);
             end;

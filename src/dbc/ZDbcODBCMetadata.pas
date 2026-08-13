@@ -1848,7 +1848,7 @@ begin
   StrLen := WStrLen(PWideChar(InStr));
 
   If (Length(InStr) > 0) and (StrLen = 0) then
-    Result := EmptyStr
+    Result := EmptyWideStr
   else
     Result := InStr;
 end;
@@ -2203,7 +2203,7 @@ begin
         Result.UpdateUnicodeString(ColumnNameIndex, CleanupString(GetUnicodeString(ColumnNameIndex)));
         aTypeName := GetUnicodeString(fTableColColumnMap.ColIndices[TableColColumnTypeNameIndex]);
         Result.UpdateUnicodeString(TableColColumnTypeNameIndex, CleanupString(aTypeName));
-        IsUnsigned := (aTypeName <> EmptyStr) and ((PWord(aTypeName)^ or $0020) = Ord('u')); //test unsigned
+        IsUnsigned := (aTypeName <> EmptyWideStr) and ((PWord(aTypeName)^ or $0020) = Ord('u')); //test unsigned
         SQLType := ConvertODBCTypeToSQLType(GetSmall(fTableColColumnMap.ColIndices[TableColColumnTypeIndex]),
           GetInt(fTableColColumnMap.ColIndices[TableColColumnDecimalDigitsIndex]),
           SmallInt(GetInt(fTableColColumnMap.ColIndices[TableColColumnSizeIndex])), IsUnsigned, ConSettings, nil);

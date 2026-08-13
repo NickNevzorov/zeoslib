@@ -243,8 +243,8 @@ type
     // naked pointer based decoding
     class function DecodeData( data : PByte; len : integer ) : TCborItem; overload;
     class function DecodeData( data : RawByteString ) : TCborItem; overload;
-    class function DecodeData( data : PByte; len : integer; var bytesDecoded : integer ) : TCborItem; overload;
-    class function DecodeData( data : RawByteString; var bytesDecoded : integer ) : TCborItem; overload;
+    class function DecodeData( data : PByte; len : integer; out bytesDecoded : integer ) : TCborItem; overload;
+    class function DecodeData( data : RawByteString; out bytesDecoded : integer ) : TCborItem; overload;
 
 
     // base64 data or base634url encoded data
@@ -306,6 +306,7 @@ end;
 
 function TWrapMemoryStream.Write(const Buffer; Count: Longint): Longint;
 begin
+     {$IFDEF FPC} Result := 0;{$ENDIF}
      raise Exception.Create('Not allowed');
 end;
 
@@ -314,8 +315,8 @@ var sFixup : string;
     i : integer;
 begin
      // url encoding
-     sFixup := stringReplace(base64Str, '+', '-', [rfReplaceAll]);
-     sFixup := StringReplace(sfixup, '/', '_', [rfReplaceAll]);
+     sFixup := {$IFDEF FPC}UnicodeStringReplace{$ELSE}StringReplace{$ENDIF}(base64Str, '+', '-', [rfReplaceAll]);
+     sFixup := {$IFDEF FPC}UnicodeStringReplace{$ELSE}StringReplace{$ENDIF}(sfixup, '/', '_', [rfReplaceAll]);
 
      // strip the '='
      i := Length(sFixup);
@@ -347,7 +348,7 @@ begin
      s := UTF8String(aData);
      Result := '';
 
-     if s <> '' then
+     if s <> EmptyStr then
         Result := Base64URLEncode( @s[1], Length(s) );
 end;
 
@@ -360,6 +361,7 @@ var
   Data: TBytes;
   {$IFEND}
 begin
+     {$IFDEF FPC}Data := TBytes(EmptyStr);{$ENDIF}
      if len = 0 then
         exit('');
 
@@ -396,6 +398,7 @@ var
   Data: TBytes;
   {$IFEND}
 begin
+     {$IFDEF FPC}Data := nil;{$ENDIF}
      {$IF NOT DECLARED(ZEncodeBase64)}
      //wrapMem := TWrapMemoryStream.Create( pData, len );
      //try
@@ -449,6 +452,7 @@ end;
 var
     Bytes: TBytes;
 begin
+  {$IFDEF FPC}Result := EmptyStr;{$ENDIF}
   Bytes := ZDecodeBase64(AnsiString(S));
   SetLength(Result, Length(Bytes));
   if length(Bytes) > 0 then
@@ -503,9 +507,15 @@ begin
         exit('');
 
      // fixup
+     {$IFNDEF FPC}
      sfixup := UTF8String(s) + UTF8String(StringOfChar( '=', (4 - Length(s) mod 4) mod 4 ));
      sFixup := UTF8String(stringReplace(String(sfixup), '-', '+', [rfReplaceAll]));
      sFixup := UTF8String(StringReplace(String(sfixup), '_', '/', [rfReplaceAll]));
+     {$ELSE}
+     sfixup := UTF8Encode(s) + StringOfChar( '=', (4 - Length(s) mod 4) mod 4 );
+     sFixup := stringReplace(sfixup, '-', '+', [rfReplaceAll]);
+     sFixup := StringReplace(sfixup, '_', '/', [rfReplaceAll]);
+     {$ENDIF}
 
      {$IF NOT DECLARED(ZDecodeBase64)}
      sConvStr := sFixup;
@@ -540,7 +550,7 @@ var res : RawByteString;
 begin
      res := Base64URLDecode( s );
      Result := nil;
-     if res <> '' then
+     if res <> EmptyStr {''} then
      begin
           SetLength(Result, Length(res));
           Move( Res[1], Result[0], Length(Res));
@@ -683,8 +693,9 @@ begin
 end;
 
 // reads a byte from the stream and reverst the position
-function PeekFromStream( stream : TStream; var buf : byte ) : byte;
+function PeekFromStream( stream : TStream; out buf : byte ) : byte;
 begin
+     {$IFDEF FPC}Buf := 0;{$ENDIF}
      stream.ReadBuffer(buf, sizeof(Buf));
      stream.Seek(-sizeof(buf), soCurrent);
      Result := buf;
@@ -714,7 +725,7 @@ end;
 
 class function TCborDecoding.Decode(stream: TStream; checkForCeborMagicNr : boolean = False): TCborItem;
 var opCode : Byte;
-    hea : Array[0..2] of byte;
+    hea : Array[0..2] of byte {$IFDEF FPC} = ($00, $00, $00){$ENDIF};
 begin
      InitDecodeTable;
 
@@ -743,13 +754,13 @@ begin
 end;
 
 class function TCborDecoding.DecodeData(data: RawByteString;
-  var bytesDecoded: integer): TCborItem;
+  out bytesDecoded: integer): TCborItem;
 begin
      Result := DecodeData( PByte( PAnsiChar( data ) ), Length(data), bytesDecoded );
 end;
 
 class function TCborDecoding.DecodeData(data: PByte; len: integer;
-  var bytesDecoded: integer): TCborItem;
+  out bytesDecoded: integer): TCborItem;
 var memStream : TWrapMemoryStream;
 begin
      memStream := TWrapMemoryStream.Create(data, len);
@@ -772,7 +783,7 @@ begin
      decoded := Base64Decode(data);
      Result := nil;
 
-     if decoded <> '' then
+     if decoded <> EmptyStr {''} then
         Result := DecodeData( PByte(PAnsiChar(decoded)), Length(decoded));
 end;
 
@@ -794,7 +805,7 @@ begin
             Free;
      end;*)
 
-     if decoded <> '' then
+     if decoded <> EmptyStr {''} then
         Result := DecodeData( PByte(PAnsiChar(decoded)), Length(decoded));
 end;
 
@@ -807,7 +818,7 @@ begin
      Result := nil;
 
      bytesDecoded := 0;
-     if decoded <> '' then
+     if decoded <> EmptyStr {''} then
         Result := DecodeData( PByte(PAnsiChar(decoded)), Length(decoded), bytesDecoded);
 
      SetLength( restBuffer, length(decoded) - bytesDecoded );
@@ -844,7 +855,7 @@ begin
      {$ENDIF}
      fmt.DecimalSeparator := '.';
      //Result := FormatFloat( '%f', fFloatVal, fmt);
-     Result := FloatToStr(ffloatVal, fmt);
+     Result := String(FloatToStr(ffloatVal, fmt));
 end;
 
 procedure TCborFloat.CBOREncode(toStream: TStream);
@@ -924,9 +935,9 @@ begin
      Result := '{';
      for i := 0 to fNames.Count - 1 do
      begin
-          Result := Result + ifthen(fNames[i] is TCborUtf8String, '', '"') +
+          Result := Result + String(ifthen(fNames[i] is TCborUtf8String, '', '"')) +
                              fNames[i].ToString +
-                             ifthen(fNames[i] is TCborUtf8String, '', '"') +
+                             String(ifthen(fNames[i] is TCborUtf8String, '', '"')) +
                              ':' + fvalue[i].ToString;
           if i <> fNames.Count - 1 then
              Result := Result + ',';
@@ -1018,7 +1029,7 @@ begin
      begin
           if (Names[i] is TCborUtf8String) then
           begin
-               if SameStr( String((Names[i] as TCborUtf8String).Value), name) then
+               if (Names[i] as TCborUtf8String).Value = UTF8String(name) then
                begin
                     Result := i;
                     break;
@@ -1026,7 +1037,7 @@ begin
           end
           else if (Names[i] is TCborUINTItem) then
           begin
-               if name = IntToStr( (Names[i] as TCborUINTItem).Value ) then
+               if name = String(IntToStr( (Names[i] as TCborUINTItem).Value )) then
                begin
                     Result := i;
                     break;
@@ -1034,7 +1045,7 @@ begin
           end
           else if (Names[i] is TCborNegIntItem) then
           begin
-               if name = IntToStr( (Names[i] as TCborNegIntItem).Value ) then
+               if name = String(IntToStr( (Names[i] as TCborNegIntItem).Value )) then
                begin
                     Result := i;
                     break;
@@ -1168,6 +1179,7 @@ begin
      end;
 end;
 begin
+     {$IFDEF FPC}Result := '';{$ENDIF}
      idx := 1;
      actPos := 1;
 
@@ -1187,7 +1199,7 @@ begin
           else
               if (ord(jsonString[idx]) < 32) or (ord(jsonString[idx]) > 127)
               then
-                  WriteJSONStr('\u' + inttohex(ord(jsonString[idx]), 4), Result)
+                  WriteJSONStr('\u' + String(inttohex(ord(jsonString[idx]), 4)), Result)
               else
               begin
                    Result[actPos] := jsonString[idx];
@@ -1310,6 +1322,7 @@ end;
 
 function TCborByteString.ToBytes: TBytes;
 begin
+     {$IFDEF FPC}Result := nil;{$ENDIF}
      SetLength( Result, Length(fbyteStr));
      if Length(fbyteStr) > 0 then
         Move( fByteStr[1], Result[0], Length(fbyteStr));
@@ -1329,7 +1342,7 @@ end;
 
 function TCborNegIntItem.ToString: string;
 begin
-     Result := IntToStr(fnegIntVal);
+     Result := String(IntToStr(fnegIntVal));
 end;
 
 procedure TCborNegIntItem.CBOREncode(toStream: TStream);
@@ -1392,7 +1405,7 @@ end;
 
 function TCborUINTItem.ToString: string;
 begin
-     Result := IntToStr(fuIntVal);
+     Result := String(IntToStr(fuIntVal));
 end;
 
 procedure TCborUINTItem.CBOREncode(toStream: TStream);
@@ -1464,7 +1477,7 @@ end;
 
 function TCborItem.ToString: string;
 begin
-     Result := 'Type: ' + intToStr( integer(fCBORType ) );
+     Result := 'Type: ' + String(intToStr( integer(fCBORType ) ));
 end;
 
 { TCborBoolean }
@@ -1486,7 +1499,7 @@ end;
 
 function TCborBoolean.ToString: string;
 begin
-     Result := ifthen( fBoolVal, 'true', 'false' );
+     Result := String(ifthen( fBoolVal, 'true', 'false' ));
 end;
 
 { TCborNULL }
@@ -1541,7 +1554,7 @@ end;
 
 function TCborSimpleValue.ToString: string;
 begin
-     Result := IntToStr(fSimpleVal);
+     Result := String(IntToStr(fSimpleVal));
 end;
 
 
@@ -1552,6 +1565,7 @@ end;
 function DecodeTinyUInt( stream : TStream ) : TCborItem;
 var opCode : byte;
 begin
+     {$IFDEF FPC}opCode := 0;{$ENDIF};
      stream.ReadBuffer(opCode, sizeof(opCode));
 
      Result := TCborUINTItem.Create(opCode and cCBORValMask);
@@ -1561,6 +1575,7 @@ function DecodeByte( stream : TStream ) : TCborItem;
 var opCode : byte;
     val : byte;
 begin
+     {$IFDEF FPC}opCode := 0; val := 0;{$ENDIF};
      stream.ReadBuffer(opCode, sizeof(opCode));
      stream.ReadBuffer(val, sizeof(val));
 
@@ -1571,6 +1586,7 @@ function DecodeWord( stream : TStream ) : TCborItem;
 var opCode : byte;
     val : word;
 begin
+     {$IFDEF FPC}opCode := 0; val := 0;{$ENDIF};
      stream.ReadBuffer(opCode, sizeof(opCode));
      stream.ReadBuffer(val, sizeof(val));
      RevertByteOrder(@val, sizeof(val));
@@ -1583,6 +1599,7 @@ function DecodeLongWord( stream : TStream ) : TCborItem;
 var opCode : byte;
     val : Cardinal;
 begin
+     {$IFDEF FPC}opCode := 0; val := 0;{$ENDIF};
      stream.ReadBuffer(opCode, sizeof(opCode));
      stream.ReadBuffer(val, sizeof(val));
      RevertByteOrder(@val, sizeof(val));
@@ -1595,6 +1612,7 @@ function DecodeUINT64( stream : TStream ) : TCborItem;
 var opCode : byte;
     val : uint64;
 begin
+     {$IFDEF FPC}opCode := 0; val := 0;{$ENDIF};
      stream.ReadBuffer(opCode, sizeof(opCode));
      stream.ReadBuffer(val, sizeof(val));
      RevertByteOrder(@val, sizeof(val));
@@ -1605,6 +1623,7 @@ end;
 function DecodeTinyNegInt( stream : TStream ) : TCborItem;
 var val : byte;
 begin
+     {$IFDEF FPC}val := 0;{$ENDIF};
      stream.ReadBuffer(val, sizeof(val));
 
      Result := TCborNegIntItem.Create(-1 - (val and cCBORValMask));
@@ -1614,6 +1633,7 @@ function DecodeNegByte( stream : TStream ) : TCborItem;
 var opCode : byte;
     val : byte;
 begin
+     {$IFDEF FPC}opCode := 0; val := 0;{$ENDIF};
      stream.ReadBuffer(opCode, sizeof(opCode));
      stream.ReadBuffer(val, sizeof(val));
 
@@ -1624,6 +1644,7 @@ function DecodeNegWord( stream : TStream ) : TCborItem;
 var opCode : byte;
     val : word;
 begin
+     {$IFDEF FPC}opCode := 0; val := 0;{$ENDIF};
      stream.ReadBuffer(opCode, sizeof(opCode));
      stream.ReadBuffer(val, sizeof(val));
      RevertByteOrder(@val, sizeof(val));
@@ -1635,6 +1656,7 @@ function DecodeNegLongWord( stream : TStream ) : TCborItem;
 var opCode : byte;
     val : Cardinal;
 begin
+     {$IFDEF FPC}opCode := 0; val := 0;{$ENDIF};
      stream.ReadBuffer(opCode, sizeof(opCode));
      stream.ReadBuffer(val, sizeof(val));
      RevertByteOrder(@val, sizeof(val));
@@ -1647,6 +1669,7 @@ function DecodeNegUINT64( stream : TStream ) : TCborItem;
 var opCode : byte;
     val : uint64;
 begin
+     {$IFDEF FPC}opCode := 0; val := 0;{$ENDIF};
      stream.ReadBuffer(opCode, sizeof(opCode));
      stream.ReadBuffer(val, sizeof(val));
      RevertByteOrder(@val, sizeof(val));
@@ -1660,6 +1683,8 @@ var len : integer;
     opCode : byte;
     byteSTr : RawByteString;
 begin
+     {$IFDEF FPC}opCode := 0;{$ENDIF}
+     byteSTr := '';
      stream.ReadBuffer(opCode, sizeof(opCode));
 
      len := opCode - $40;
@@ -1674,6 +1699,8 @@ var len : byte;
     opCode : byte;
     byteSTr : RawByteString;
 begin
+     {$IFDEF FPC}opCode := 0; len := 0;{$ENDIF}
+     byteSTr := '';
      stream.ReadBuffer(opCode, sizeof(opCode));
 
      Stream.ReadBuffer(len, sizeof(len));
@@ -1688,6 +1715,8 @@ var len : word;
     opCode : byte;
     byteSTr : RawByteString;
 begin
+     {$IFDEF FPC}opCode := 0; len := 0;{$ENDIF}
+     byteSTr := '';
      stream.ReadBuffer(opCode, sizeof(opCode));
 
      Stream.ReadBuffer(len, sizeof(len));
@@ -1703,6 +1732,8 @@ var len : Cardinal;
     opCode : byte;
     byteSTr : RawByteString;
 begin
+     {$IFDEF FPC}opCode := 0; len := 0;{$ENDIF}
+     byteSTr := '';
      stream.ReadBuffer(opCode, sizeof(opCode));
 
      Stream.ReadBuffer(len, sizeof(len));
@@ -1719,6 +1750,8 @@ var len : UINT64;
     opCode : byte;
     byteSTr : RawByteString;
 begin
+     {$IFDEF FPC}opCode := 0; len := 0;{$ENDIF}
+     byteSTr := '';
      stream.ReadBuffer(opCode, sizeof(opCode));
 
      Stream.ReadBuffer(len, sizeof(len));
@@ -1735,6 +1768,8 @@ var aItem : TCborByteString;
     opCode : byte;
     resByteStr : RawByteString;
 begin
+     {$IFDEF FPC}opCode := 0;{$ENDIF}
+     resByteStr := '';
      stream.ReadBuffer( opCode, sizeof(opcode));
 
      while PeekFromStream( stream, opcode) <> cCborBreak do
@@ -1754,6 +1789,8 @@ var len : integer;
     opCode : byte;
     byteSTr : UTF8String;
 begin
+     {$IFDEF FPC}opCode := 0;{$ENDIF}
+     byteSTr := '';
      stream.ReadBuffer(opCode, sizeof(opCode));
 
      len := opCode - $60;
@@ -1768,6 +1805,8 @@ var len : byte;
     opCode : byte;
     byteSTr : UTF8String;
 begin
+     {$IFDEF FPC}len := 0; opCode := 0;{$ENDIF}
+     byteSTr := '';
      stream.ReadBuffer(opCode, sizeof(opCode));
 
      Stream.ReadBuffer(len, sizeof(len));
@@ -1782,6 +1821,8 @@ var len : word;
     opCode : byte;
     byteSTr : UTF8String;
 begin
+     {$IFDEF FPC}len := 0; opCode := 0;{$ENDIF}
+     byteSTr := '';
      stream.ReadBuffer(opCode, sizeof(opCode));
 
      Stream.ReadBuffer(len, sizeof(len));
@@ -1797,6 +1838,8 @@ var len : Cardinal;
     opCode : byte;
     byteSTr : UTF8String;
 begin
+     {$IFDEF FPC}len := 0; opCode := 0;{$ENDIF}
+     byteSTr := '';
      stream.ReadBuffer(opCode, sizeof(opCode));
 
      Stream.ReadBuffer(len, sizeof(len));
@@ -1813,6 +1856,8 @@ var len : UINT64;
     opCode : byte;
     byteSTr : UTF8String;
 begin
+     {$IFDEF FPC}len := 0; opCode := 0;{$ENDIF}
+     byteSTr := '';
      stream.ReadBuffer(opCode, sizeof(opCode));
 
      Stream.ReadBuffer(len, sizeof(len));
@@ -1829,6 +1874,8 @@ var aItem : TCborUtf8String;
     opCode : byte;
     resByteStr : UTF8String;
 begin
+     {$IFDEF FPC}opCode := 0;{$ENDIF}
+     resByteStr := '';
      stream.ReadBuffer( opCode, sizeof(opcode));
 
      while PeekFromStream( stream, opcode) <> cCborBreak do
@@ -1848,6 +1895,7 @@ var opcode : byte;
     len : integer;
     i : integer;
 begin
+     {$IFDEF FPC}opCode := 0;{$ENDIF}
      stream.ReadBuffer(opCode, sizeof(opCode));
      len := OpCode - $80;
 
@@ -1866,6 +1914,7 @@ var len : byte;
     i : integer;
     opCode : Byte;
 begin
+     {$IFDEF FPC}opCode := 0; len := 0;{$ENDIF}
      stream.ReadBuffer(opCode, sizeof(opCode) );
      stream.ReadBuffer(len, sizeof(len));
 
@@ -1884,6 +1933,7 @@ var len : word;
     i : integer;
     opCode : Byte;
 begin
+     {$IFDEF FPC}opCode := 0; len := 0;{$ENDIF}
      stream.ReadBuffer(opCode, sizeof(opCode) );
      stream.ReadBuffer(len, sizeof(len));
      RevertByteOrder( @len, sizeof(len) );
@@ -1903,6 +1953,7 @@ var len : Cardinal;
     i : integer;
     opCode : Byte;
 begin
+     {$IFDEF FPC}opCode := 0; len := 0;{$ENDIF}
      stream.ReadBuffer(opCode, sizeof(opCode) );
      stream.ReadBuffer(len, sizeof(len));
      RevertByteOrder( @len, sizeof(len) );
@@ -1921,6 +1972,7 @@ function DecodeLongLongIntList( stream : TStream ) : TCborItem;
 var len : UInt64;
     opCode : Byte;
 begin
+     {$IFDEF FPC}opCode := 0; len := 0;{$ENDIF}
      stream.ReadBuffer(opCode, sizeof(opCode) );
      stream.ReadBuffer(len, sizeof(len));
      RevertByteOrder( @len, sizeof(len) );
@@ -1943,6 +1995,7 @@ var item : TCborItem;
     opCode : byte;
     i:Integer;
 begin
+     {$IFDEF FPC}opCode := 0;{$ENDIF}
      stream.ReadBuffer(opCode, sizeof(opCode) );
 
      Result := TCborArr.Create;
@@ -1983,6 +2036,7 @@ var opcode : byte;
     i : integer;
     name, value : TCborItem;
 begin
+     {$IFDEF FPC}opCode := 0;{$ENDIF}
      stream.ReadBuffer(opCode, sizeof(opCode));
      len := OpCode - $A0;
 
@@ -2016,6 +2070,7 @@ var opcode : byte;
     i : integer;
     name, value : TCborItem;
 begin
+     {$IFDEF FPC}opCode := 0; len := 0;{$ENDIF}
      stream.ReadBuffer(opCode, sizeof(opCode));
      stream.ReadBuffer(len, sizeof(len));
 
@@ -2050,6 +2105,7 @@ var opcode : byte;
     i : integer;
     name, value : TCborItem;
 begin
+     {$IFDEF FPC}opCode := 0; len := 0;{$ENDIF}
      stream.ReadBuffer(opCode, sizeof(opCode));
      stream.ReadBuffer(len, sizeof(len));
      RevertByteOrder(@len, sizeof(len));
@@ -2085,6 +2141,7 @@ var opcode : byte;
     i : integer;
     name, value : TCborItem;
 begin
+     {$IFDEF FPC}opCode := 0; len := 0;{$ENDIF}
      stream.ReadBuffer(opCode, sizeof(opCode));
      stream.ReadBuffer(len, sizeof(len));
      RevertByteOrder(@len, sizeof(len));
@@ -2120,6 +2177,7 @@ var opcode : byte;
     i : integer;
     name, value : TCborItem;
 begin
+     {$IFDEF FPC}opCode := 0; len := 0;{$ENDIF}
      stream.ReadBuffer(opCode, sizeof(opCode));
      stream.ReadBuffer(len, sizeof(len));
      RevertByteOrder(@len, sizeof(len));
@@ -2153,6 +2211,7 @@ function DecodeChunkedMap( stream : TStream ) : TCborItem;
 var opCode : byte;
     name, value : TCborItem;
 begin
+     {$IFDEF FPC}opCode := 0;{$ENDIF}
      stream.ReadBuffer(opCode, sizeof(opcode));
 
      Result := TCborMap.Create;
@@ -2177,6 +2236,7 @@ end;
 function DecodeTinyFloat( stream : TStream ) : TCborItem;
 var opCode : Byte;
 begin
+     {$IFDEF FPC}opCode := 0;{$ENDIF}
      stream.ReadBuffer(opCode, sizeof(opCode));
      Result := TCborFloat.Create( opcode and cCBORValMask);
 end;
@@ -2184,6 +2244,7 @@ end;
 function DecodeTrueFalse( stream : TStream ) : TCBorItem;
 var opCode : Byte;
 begin
+     {$IFDEF FPC}opCode := 0;{$ENDIF}
      stream.ReadBuffer(opCode, sizeof(opCode));
      Result := TCborBoolean.Create( opCode = $F5 );
 end;
@@ -2191,6 +2252,7 @@ end;
 function DecodeNULL( stream : TStream ) : TCborItem;
 var opCode : Byte;
 begin
+     {$IFDEF FPC}opCode := 0;{$ENDIF}
      stream.ReadBuffer(opCode, sizeof(opCode));
      Result := TCborNULL.Create;
 end;
@@ -2198,6 +2260,7 @@ end;
 function DecodeTinySimpleVal( stream : TStream ) : TCborItem;
 var opCode : Byte;
 begin
+     {$IFDEF FPC}opCode := 0;{$ENDIF}
      stream.ReadBuffer(opCode, sizeof(opCode));
      Result := TCborSimpleValue.Create(opCode and cCBORValMask);
 end;
@@ -2206,6 +2269,7 @@ function DecodeSimpleValue( stream : TStream ) : TCborItem;
 var opCode : byte;
     val : byte;
 begin
+     {$IFDEF FPC}opCode := 0; val := 0;{$ENDIF}
      stream.ReadBuffer(opCode, sizeof(opCode));
      stream.ReadBuffer(val, sizeof(val) );
      Result := TCborSimpleValue.Create(val);
@@ -2215,6 +2279,7 @@ function Decode16BitFloat( stream : TStream ) : TCborItem;
 var opCode : byte;
     val : word;
 begin
+     {$IFDEF FPC}opCode := 0; val := 0;{$ENDIF}
      stream.ReadBuffer(opCode, sizeof(opCode));
      stream.ReadBuffer(val, sizeof(val) );
      RevertByteOrder(@val, sizeof(val));
@@ -2225,6 +2290,7 @@ function DecodeFloat( stream : TStream ) : TCborItem;
 var opCode : byte;
     val : single;
 begin
+     {$IFDEF FPC}opCode := 0; val := 0;{$ENDIF}
      stream.ReadBuffer(opCode, sizeof(opCode));
      stream.ReadBuffer(val, sizeof(val) );
      RevertByteOrder(@val, sizeof(val));
@@ -2235,6 +2301,7 @@ function DecodeDouble( stream : TStream ) : TCborItem;
 var opCode : byte;
     val : double;
 begin
+     {$IFDEF FPC}opCode := 0; val := 0;{$ENDIF}
      stream.ReadBuffer(opCode, sizeof(opCode));
      stream.ReadBuffer(val, sizeof(val) );
      RevertByteOrder(@val, sizeof(val));
@@ -2244,8 +2311,14 @@ end;
 
 function NotImplemented( stream : TStream ) : TCborItem;
 var buf : Byte;
+    Hex: String;
+    ErrorMsg: String;
 begin
-     raise ECBorNotImplmented.Create('Error code $' + IntToHex(PeekFromStream(stream, buf), 2) + ' + not implemented');
+     {$IFDEF FPC}Result := nil;{$ENDIF}
+     PeekFromStream(stream, buf);
+     Hex := String(IntToHex(Int64(buf), 2));
+     ErrorMsg := String(Format('Error code $%s not implemented', [Hex]));
+     raise ECBorNotImplmented.Create({$IFDEF FPC}AnsiString({$ENDIF}ErrorMsg{$IFDEF FPC}){$ENDIF});
 end;
 
 // jump table as defined in the RFC

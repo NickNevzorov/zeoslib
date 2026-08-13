@@ -59,7 +59,7 @@ interface
 uses
   {$IFDEF WITH_TOBJECTLIST_REQUIRES_SYSTEM_TYPES}System.Types{$IFNDEF NO_UNIT_CONTNRS}, Contnrs{$ENDIF}{$ELSE}Types{$ENDIF},
   Classes, {$IFDEF MSEgui}mclasses,{$ENDIF} SysUtils,
-  ZPlainProxyDriverIntf, ZSysUtils, ZDbcIntfs, ZDbcResultSet, ZDbcLogging,{$IFDEF ZEOS73UP}FmtBCD, ZVariant, {$ENDIF}
+  {ZPlainProxyDriverIntf,} ZSysUtils, ZDbcIntfs, ZDbcResultSet, ZDbcLogging,{$IFDEF ZEOS73UP}FmtBCD, ZVariant, {$ENDIF}
   ZDbcResultSetMetadata, ZCompatibility, {$IFDEF FPC}ZXmlCompat{$ELSE} XmlDoc, XmlIntf{$ENDIF}, ZCbor;
 
 type
@@ -582,7 +582,7 @@ implementation
 
 uses
   {$IFDEF WITH_UNITANSISTRINGS}AnsiStrings,{$ENDIF} Math,
-  ZMessages, ZEncoding, ZFastCode, ZDbcMetadata, ZClasses,
+  ZMessages, ZEncoding, ZFastCode, ZDbcMetadata, {ZClasses,}
   TypInfo, Variants, ZBase64, ZExceptions {$IFNDEF FPC},xmldom{$ENDIF} {$IFDEF WITH_OMNIXML}, Xml.omnixmldom{$ENDIF};
 
 const
@@ -596,6 +596,7 @@ end;
 {$IF NOT DECLARED(BCDToCurrency)}
 function BCDToCurrency(const BCD: tBCD): Currency;
 begin
+  {$IFDEF FPC}Result := 0;{$ENDIF}
   BCDToCurr(BCD, Result);
 end;
 {$IFEND}
@@ -848,7 +849,11 @@ begin
 
   if not LastWasNull then begin
     Val := FCurrentRowNode.ChildNodes.Get(ColumnIndex - FirstDbcIndex).Attributes[ValueAttr];
+    {$IFDEF UNICODE}
     FWideBuffer := VarToStrDef(Val, '');
+    {$ELSE}
+    FWideBuffer := ZWideString(VarToStrDef(Val, ''));
+    {$ENDIF}
     Len := Length(FWideBuffer);
     if Len = 0
     then Result := PEmptyUnicodeString
@@ -902,7 +907,7 @@ end;
 function TZDbcProxyResultSet.GetUTF8String(ColumnIndex: Integer): UTF8String;
 var
   Val: OleVariant;
-  Val2: ZWideString;
+  Val2: String;
 begin
   LastWasNull := IsNull(ColumnIndex);
   if LastWasNull then begin
@@ -912,7 +917,11 @@ begin
 
   Val := FCurrentRowNode.ChildNodes.Get(ColumnIndex - FirstDbcIndex).Attributes[ValueAttr];
   Val2 := VarToStr(Val);
+  {$IFDEF UNICODE}
   Result := UTF8Encode(Val2);
+  {$ELSE}
+  Result := Val2;
+  {$ENDIF}
 end;
 {$ENDIF}
 
@@ -1102,7 +1111,7 @@ function TZDbcProxyResultSet.GetULong(ColumnIndex: Integer): UInt64;
 var
   ColType: TZSQLType;
   Idx: Integer;
-  Val: ZWideString;
+  Val: String;
 begin
 {$IFNDEF DISABLE_CHECKING}
   CheckColumnConvertion(ColumnIndex, stInteger);
@@ -1115,21 +1124,17 @@ begin
   end;
 
   Idx := ColumnIndex - FirstDbcIndex;
-  Val := FCurrentRowNode.ChildNodes.Get(Idx).Attributes[ValueAttr];
+  Val := VarToStr(FCurrentRowNode.ChildNodes.Get(Idx).Attributes[ValueAttr]);
   ColType := TZColumnInfo(ColumnsInfo.Items[Idx]).ColumnType;
   case ColType of
     stBoolean:
       Result := BoolToInt(StrToBool(Val));
-    stByte, stShort, stWord, stSmall, stLongWord, stInteger:
-      Result := UnicodeToUInt64(Val);
-    stULong:
-      Result := UnicodeToUInt64(Val);
-    stLong:
+    stByte, stShort, stWord, stSmall, stLongWord, stInteger, stLong, stULong:
       Result := StrToInt64(Val);
     stFloat, stDouble, stCurrency, stBigDecimal:
       Result := Trunc(StrToFloat(Val, FFormatSettings));
     stString, stUnicodeString, stAsciiStream, stUnicodeStream:
-      Result := UnicodeToUInt64(Val);
+      Result := {$IFDEF UNICODE}UnicodeToUInt64(Val){$ELSE}RawToUInt64(Val){$ENDIF};
     stDate:
       Result := Trunc(StrToDate(Val, FFormatSettings));
     stTime:
@@ -1154,7 +1159,7 @@ function TZDbcProxyResultSet.GetFloat(ColumnIndex: Integer): Single;
 var
   ColType: TZSQLType;
   Idx: Integer;
-  Val: ZWideString;
+  Val: String;
 begin
 {$IFNDEF DISABLE_CHECKING}
   CheckColumnConvertion(ColumnIndex, stInteger);
@@ -1167,17 +1172,15 @@ begin
   end;
 
   Idx := ColumnIndex - FirstDbcIndex;
-  Val := FCurrentRowNode.ChildNodes.Get(Idx).Attributes[ValueAttr];
+  Val := VarToStr(FCurrentRowNode.ChildNodes.Get(Idx).Attributes[ValueAttr]);
   ColType := TZColumnInfo(ColumnsInfo.Items[Idx]).ColumnType;
   case ColType of
     stBoolean:
       Result := BoolToInt(StrToBool(Val));
     stByte, stShort, stWord, stSmall, stLongWord, stInteger:
       Result := StrToInt(Val);
-    stULong:
-      Result := UnicodeToUInt64(Val);
-    stLong:
-      Result := UnicodeToUInt64(Val);
+    stULong, stLong:
+      Result := {$IFDEF UNICODE}UnicodeToUInt64(Val){$ELSE}RawToUInt64(Val){$ENDIF};
     stFloat, stDouble, stCurrency, stBigDecimal:
       Result := StrToFloat(Val, FFormatSettings);
     stString, stUnicodeString, stAsciiStream, stUnicodeStream:
@@ -1206,7 +1209,7 @@ function TZDbcProxyResultSet.GetDouble(ColumnIndex: Integer): Double;
 var
   ColType: TZSQLType;
   Idx: Integer;
-  Val: ZWideString;
+  Val: String;
 begin
 {$IFNDEF DISABLE_CHECKING}
   CheckColumnConvertion(ColumnIndex, stInteger);
@@ -1219,17 +1222,15 @@ begin
   end;
 
   Idx := ColumnIndex - FirstDbcIndex;
-  Val := FCurrentRowNode.ChildNodes.Get(Idx).Attributes[ValueAttr];
+  Val := VarToStr(FCurrentRowNode.ChildNodes.Get(Idx).Attributes[ValueAttr]);
   ColType := TZColumnInfo(ColumnsInfo.Items[Idx]).ColumnType;
   case ColType of
     stBoolean:
       Result := BoolToInt(StrToBool(Val));
     stByte, stShort, stWord, stSmall, stLongWord, stInteger:
       Result := StrToInt(Val);
-    stULong:
-      Result := UnicodeToUInt64(Val);
-    stLong:
-      Result := UnicodeToUInt64(Val);
+    stULong, stLong:
+      Result := {$IFDEF UNICODE}UnicodeToUInt64(Val){$ELSE}RawToUInt64(Val){$ENDIF};
     stFloat, stDouble, stCurrency, stBigDecimal:
       Result := StrToFloat(Val, FFormatSettings);
     stString, stUnicodeString, stAsciiStream, stUnicodeStream:
@@ -1303,7 +1304,7 @@ function TZDbcProxyResultSet.GetBigDecimal(ColumnIndex: Integer): TBcd;
 var
   ColType: TZSQLType;
   Idx: Integer;
-  Val: ZWideString;
+  Val: String;
 begin
 {$IFNDEF DISABLE_CHECKING}
   CheckColumnConvertion(ColumnIndex, stInteger);
@@ -1324,13 +1325,13 @@ begin
     stByte, stShort, stWord, stSmall, stLongWord, stInteger:
       Result := IntegerToBcd(StrToInt(Val));
     stULong:
-      ScaledOrdinal2Bcd(UnicodeToUInt64(Val), 0, Result, False);
+      ScaledOrdinal2Bcd({$IFDEF UNICODE}UnicodeToUInt64(Val){$ELSE}RawToUInt64(Val){$ENDIF}, 0, Result, False);
     stLong:
       ScaledOrdinal2Bcd(StrToInt64(Val), 0, Result);
     stFloat, stDouble, stCurrency, stBigDecimal:
-      Result := UniToBcd(Val);
+      Result := {$IFDEF UNICODE}UniToBcd(Val){$ELSE}RawToBCD(Val){$ENDIF};
     stString, stUnicodeString, stAsciiStream, stUnicodeStream:
-      Result := UniToBcd(Val);
+      Result := {$IFDEF UNICODE}UniToBcd(Val){$ELSE}RawToBCD(Val){$ENDIF};
     else
       Result := IntegerToBcd(0);
   end;
@@ -1383,7 +1384,7 @@ function TZDbcProxyResultSet.GetCurrency(
 var
   ColType: TZSQLType;
   Idx: Integer;
-  Val: ZWideString;
+  Val: String;
 begin
 {$IFNDEF DISABLE_CHECKING}
   CheckColumnConvertion(ColumnIndex, stInteger);
@@ -1396,7 +1397,7 @@ begin
   end;
 
   Idx := ColumnIndex - FirstDbcIndex;
-  Val := FCurrentRowNode.ChildNodes.Get(Idx).Attributes[ValueAttr];
+  Val := VarToStr(FCurrentRowNode.ChildNodes.Get(Idx).Attributes[ValueAttr]);
   ColType := TZColumnInfo(ColumnsInfo.Items[Idx]).ColumnType;
   case ColType of
     stBoolean:
@@ -1404,7 +1405,7 @@ begin
     stByte, stShort, stWord, stSmall, stLongWord, stInteger:
       Result := StrToInt(Val);
     stULong:
-      Result := UnicodeToUInt64(Val);
+      Result := {$IFDEF UNICODE}UnicodeToUInt64(Val){$ELSE}RawToUInt64(Val){$ENDIF};
     stLong:
       Result := StrToInt64(Val);
     stCurrency:
@@ -1437,7 +1438,7 @@ function TZDbcProxyResultSet.GetDate(ColumnIndex: Integer): TDateTime;
 var
   ColType: TZSQLType;
   Idx: Integer;
-  Val: ZWideString;
+  Val: String;
 begin
 {$IFNDEF DISABLE_CHECKING}
   CheckColumnConvertion(ColumnIndex, stInteger);
@@ -1450,7 +1451,7 @@ begin
   end;
 
   Idx := ColumnIndex - FirstDbcIndex;
-  Val := FCurrentRowNode.ChildNodes.Get(Idx).Attributes[ValueAttr];
+  Val := VarToStr(FCurrentRowNode.ChildNodes.Get(Idx).Attributes[ValueAttr]);
   ColType := TZColumnInfo(ColumnsInfo.Items[Idx]).ColumnType;
   case ColType of
     stBoolean:
@@ -1458,7 +1459,7 @@ begin
     stByte, stShort, stWord, stSmall, stLongWord, stInteger:
       Result := StrToInt(Val);
     stULong:
-      Result := UnicodeToUInt64(Val);
+      Result := {$IFDEF UNICODE}UnicodeToUInt64(Val){$ELSE}RawToUInt64(Val){$ENDIF};
     stLong:
       Result := StrToInt64(Val);
     stFloat, stDouble, stBigDecimal, stCurrency:
@@ -1542,7 +1543,7 @@ function TZDbcProxyResultSet.GetTimestamp(ColumnIndex: Integer): TDateTime;
 var
   ColType: TZSQLType;
   Idx: Integer;
-  Val: ZWideString;
+  Val: String;
 begin
 {$IFNDEF DISABLE_CHECKING}
   CheckColumnConvertion(ColumnIndex, stInteger);
@@ -1555,7 +1556,7 @@ begin
   end;
 
   Idx := ColumnIndex - FirstDbcIndex;
-  Val := FCurrentRowNode.ChildNodes.Get(Idx).Attributes[ValueAttr];
+  Val := VarToStr(FCurrentRowNode.ChildNodes.Get(Idx).Attributes[ValueAttr]);
   ColType := TZColumnInfo(ColumnsInfo.Items[Idx]).ColumnType;
   case ColType of
     stBoolean:
@@ -1563,7 +1564,7 @@ begin
     stByte, stShort, stWord, stSmall, stLongWord, stInteger:
       Result := StrToInt(Val);
     stULong:
-      Result := UnicodeToUInt64(Val);
+      Result := {$IFDEF UNICODE}UnicodeToUInt64(Val){$ELSE}RawToUInt64(Val){$ENDIF};
     stLong:
       Result := StrToInt64(Val);
     stFloat, stDouble, stBigDecimal, stCurrency:
@@ -1727,15 +1728,15 @@ begin
     stBoolean:
       Result := BoolToInt(StrToBool(Val));
     stByte, stShort, stWord, stSmall, stLongWord, stInteger:
-      Result := UnicodeToUInt32(Val);
+      Result := {$IFDEF UNICODE}UnicodeToUInt32(Val){$ELSE}RawToUInt32(Val){$ENDIF};
     stULong:
-      Result := UnicodeToUInt32(Val);
+      Result := {$IFDEF UNICODE}UnicodeToUInt32(Val){$ELSE}RawToUInt32(Val){$ENDIF};
     stLong:
-      Result := UnicodeToUInt32(Val);
+      Result := {$IFDEF UNICODE}UnicodeToUInt32(Val){$ELSE}RawToUInt32(Val){$ENDIF};
     stFloat, stDouble, stCurrency, stBigDecimal:
       Result := Trunc(StrToFloat(Val, FFormatSettings));
     stString, stUnicodeString, stAsciiStream, stUnicodeStream:
-      Result := UnicodeToUInt32(Val);
+      Result := {$IFDEF UNICODE}UnicodeToUInt32(Val){$ELSE}RawToUInt32(Val){$ENDIF};
     stDate:
       Result := Trunc(StrToDate(Val, FFormatSettings));
     stTime:
@@ -2761,6 +2762,7 @@ end;
 }
 function TZDbcProxyCborResultSet.GetBytes(ColumnIndex: Integer): TBytes;
 begin
+  {$IFDEF FPC}Result := nil;{$ENDIF}
   LastWasNull := IsNull(ColumnIndex);
 
   if LastWasNull then begin

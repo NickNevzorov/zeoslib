@@ -163,7 +163,7 @@ type
     function GetAsCurrency(const Value: TZVariant): Currency;
     procedure GetAsBigDecimal(const Value: TZVariant; Var Result: TBCD);
     procedure GetAsDate(const Value: TZVariant; Var Result: TZDate);
-    procedure GetAsTime(const Value: TZVariant; Var Result: TZTime);
+    procedure GetAsTime(const Value: TZVariant; Out Result: TZTime);
     procedure GetAsTimeStamp(const Value: TZVariant; Var Result: TZTimeStamp);
     procedure GetAsGUID(const Value: TZVariant; Var Result: TGUID);
     function GetAsString(const Value: TZVariant): String;
@@ -280,7 +280,7 @@ type
     function GetAsCurrency(const Value: TZVariant): Currency;
     procedure GetAsBigDecimal(const Value: TZVariant; Var Result: TBCD);
     procedure GetAsDate(const Value: TZVariant; Var Result: TZDate);
-    procedure GetAsTime(const Value: TZVariant; Var Result: TZTime);
+    procedure GetAsTime(const Value: TZVariant; Out Result: TZTime);
     procedure GetAsTimeStamp(const Value: TZVariant; Var Result: TZTimeStamp);
     procedure GetAsGUID(const Value: TZVariant; Var Result: TGUID);
     function GetAsString(const Value: TZVariant): String;
@@ -1164,7 +1164,7 @@ end;
   @param a result value.
 }
 procedure TZSoftVariantManager.GetAsTime(const Value: TZVariant;
-  var Result: TZTime);
+  Out Result: TZTime);
 var P: Pointer;
 Label Fail;
 begin

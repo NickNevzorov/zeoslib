@@ -157,6 +157,7 @@
                 {$DEFINE WITH_TSTRINGS_TENCODING_LOADFROM}           // TStrings.LoadFromFile/LoadFromStream have TEncoding
                 // {$DEFINE WITH_NETENCODING} // removed because Debian 11
                 // doesn't have the system.netencoding units
+                {$DEFINE HAVE_TFORMATSETTINGS_CREATE}
                 {$IF FPC_FULLVERSION>=30203}
                   {$DEFINE WITH_FTLONGWORD}                 // ftLongWord is supported
                   {$DEFINE WITH_FTBYTE}                     // ftByte is supported

@@ -910,6 +910,7 @@ procedure TZAbstractBeginnerPreparedStatement.SetBytes(ParameterIndex: Integer; 
 var
   Bytes: TBytes;
 begin
+  {$IFDEF FPC}Bytes := nil;{$ENDIF}
   SetLength(Bytes, Len);
   Move(Value^, Bytes[0], Len);
   SetInParam(ParameterIndex, stBytes, EncodeBytes(Bytes));

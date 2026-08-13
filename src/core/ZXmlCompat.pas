@@ -141,12 +141,12 @@ end;
 
 function TZXmlNode.GetNodeName: String;
 begin
-  Result := FNode.NodeName;
+  Result := UTF8Encode(FNode.NodeName);
 end;
 
 function TZXmlNode.GetText: String;
 begin
-  Result := FNode.TextContent;
+  Result := UTF8Encode(FNode.TextContent);
 end;
 
 function TZXmlNode.GetAttribute(AttrName: DOMString): OleVariant;

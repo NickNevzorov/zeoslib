@@ -90,7 +90,7 @@ implementation
 
 {$IFDEF ENABLE_LDAP_SECURITY}
 
-uses ssl_openssl3, ssl_openssl3_lib, zeosproxy_imp;
+uses ssl_openssl11, ssl_openssl11_lib, zeosproxy_imp;
 
 function TZLdapSecurityModule.CheckPassword(var UserName, Password: String; const ConnectionName: String): Boolean;
 var
@@ -159,8 +159,11 @@ procedure TZLdapSecurityModule.LoadConfig(Values: IZDbcProxyKeyValueStore);
 var
   SslMode: String;
 begin
+  FUseSSL := false;
+  FUseStartTLS := false;
   FHostName := Values.ReadString('Host Name', '');
   SslMode := LowerCase(Values.ReadString('TLS Mode', 'tls'));
+  Logger.Debug(Format('SSL Mode for %0:s: %1:s', [FModuleName, SslMode]));
   if SslMode = 'tls' then
     FUseSSL := True
   else if SslMode = 'starttls' then

@@ -67,7 +67,7 @@ function encodeDatabaseInfo(const Connection: IZConnection): String;
 
 procedure decodeParameters(const ParamXML: String; Statement: IZPreparedStatement); overload;
 procedure decodeParameters(const ParamsNode: TDOMNode; Statement: IZPreparedStatement); overload;
-procedure applyConnectionProperties(const Connection: IZConnection; const Properties: String); overload;
+procedure applyConnectionProperties(const Connection: IZConnection; List: TStringList); overload;
 
 //function ZXMLEncode(Input: String): String;
 
@@ -228,47 +228,36 @@ begin
   end;
 end;
 
-procedure applyConnectionProperties(const Connection: IZConnection; const Properties: String);
+procedure applyConnectionProperties(const Connection: IZConnection; List: TStringList);
 var
-  List: TStringList;
   TempStr: AnsiString;
+  TempInt: Integer;
   TransactionIsolation: TZTransactIsolationLevel;
 begin
   TransactionIsolation := tiNone;
-  List := TStringList.Create;
-  try
-    List.Text := Properties;
-    //- Set-/IsReadOnly
-    TempStr := List.Values['readonly'];
-    if TempStr <> '' then
-      Connection.SetReadOnly(StrToBool(TempStr));
-    //- Set-/GetCatalog
-    TempStr := List.Values['catalog'];
-    if TempStr <> '' then
-      Connection.SetCatalog(TempStr);
-    //- Set-/GetTransactionIsolation
-    TempStr := List.Values['transactionisolation'];
-    if TempStr <> '' then begin
-      TransactionIsolation := TZTransactIsolationLevel(GetEnumValue(TypeInfo(TransactionIsolation), TempStr));
-      Connection.SetTransactionIsolation(TransactionIsolation);
-    end;
-    //- (Set)UseMetaData
-    TempStr := List.Values['usemetadata'];
-    if TempStr <> '' then
-      Connection.SetUseMetadata(StrToBool(TempStr));
-    //- Get-/SetAutoEncodeStrings
-    {$IFNDEF ZEOS73UP}
-    TempStr := List.Values['autoencodestrings'];
-    if TempStr <> '' then
-      Connection.SetAutoEncodeStrings(StrToBool(TempStr));
-    {$ENDIF}
-    //- Get-/SetAutoCommit (as part of initial property transfer)
-    TempStr := List.Values['autocommit'];
-    if TempStr <> '' then
-      Connection.SetAutoCommit(StrToBool(TempStr));
-  finally
-    FreeAndNil(List);
+
+  //- Set-/IsReadOnly
+  TempStr := List.Values['readonly'];
+  if TempStr <> '' then
+    Connection.SetReadOnly(StrToBool(TempStr));
+  //- Set-/GetCatalog
+  TempStr := List.Values['catalog'];
+  if TempStr <> '' then
+    Connection.SetCatalog(TempStr);
+  //- Set-/GetTransactionIsolation
+  TempStr := List.Values['transactionisolation'];
+  if TempStr <> '' then begin
+    TransactionIsolation := TZTransactIsolationLevel(GetEnumValue(TypeInfo(TransactionIsolation), TempStr));
+    Connection.SetTransactionIsolation(TransactionIsolation);
   end;
+  //- (Set)UseMetaData
+  TempStr := List.Values['usemetadata'];
+  if TempStr <> '' then
+    Connection.SetUseMetadata(StrToBool(TempStr));
+  //- Get-/SetAutoCommit (as part of initial property transfer)
+  TempStr := List.Values['autocommit'];
+  if TempStr <> '' then
+    Connection.SetAutoCommit(StrToBool(TempStr));
 end;
 
 function encodeDatabaseInfo(const Connection: IZConnection): String;

@@ -316,7 +316,7 @@ implementation
 uses
   FmtBCD, Variants,
   ZFastCode, ZMessages, ZGenericSqlToken, ZAbstractRODataset,
-  ZSysUtils, {$IFDEF DISABLE_ZPARAM}ZDbcResultSet, {$ENDIF}ZDbcUtils, ZEncoding;
+  ZSysUtils, {$IFDEF DISABLE_ZPARAM}ZDbcResultSet, {$ENDIF}{ZDbcUtils,} ZEncoding;
 
 
 {**

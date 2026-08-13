@@ -67,12 +67,12 @@ var
 begin
   {$IFDEF WINDOWS}
   {$IFDEF WIN32}
-  LibSslFile := ExtractFilePath(ParamStr(0)) + 'libssl-1_1.dll';
-  LibCryptoFile := ExtractFilePath(ParamStr(0)) + 'libcrypto-1_1.dll';
+  LibSslFile := ExtractFilePath(ParamStr(0)) + 'libssl-3.dll';
+  LibCryptoFile := ExtractFilePath(ParamStr(0)) + 'libcrypto-3.dll';
   {$ENDIF}
   {$IFDEF WIN64}
-  LibSslFile := ExtractFilePath(ParamStr(0)) + 'libssl-1_1-x64.dll';
-  LibCryptoFile := ExtractFilePath(ParamStr(0)) + 'libcrypto-1_1-x64.dll';
+  LibSslFile := ExtractFilePath(ParamStr(0)) + 'libssl-3-x64.dll';
+  LibCryptoFile := ExtractFilePath(ParamStr(0)) + 'libcrypto-3-x64.dll';
   {$ENDIF}
   if FileExists(LibSslFile) and FileExists(LibCryptoFile) then begin
     {$IF FPC_FULLVERSION <= 30202}

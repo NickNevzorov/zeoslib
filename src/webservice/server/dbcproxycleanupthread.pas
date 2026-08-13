@@ -92,7 +92,8 @@ var
 begin
   try
     y := 0;
-    ActionTime := FIdleTimeout div 2;
+    //ActionTime := FIdleTimeout div 2;
+    ActionTime := 300;
     If ActionTime = 0 then
       ActionTime := 1;
     Logger.Info('Starting Cleanup Thread');
@@ -106,7 +107,7 @@ begin
         for X := FConnManager.GetConnectionCount - 1 downto 0 do begin
           Conn := FConnManager.GetConnection(x);
           if Assigned(Conn) then begin
-            if Conn.LastAccessTime <= MaxTime then begin
+            if (Conn.LastAccessTime <= MaxTime) or ((Conn.MaxTime <> 0) and (Conn.MaxTime < Now)) then begin
               Conn.Lock;
               try
                 ConnID := Conn.ID;

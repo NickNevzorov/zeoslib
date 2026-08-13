@@ -8,12 +8,18 @@ uses
   {$IFDEF WINDOWS}Windows,{$ENDIF}Classes, SysUtils, SyncObjs;
 
 type
+  TMessageLevel = (mlDebug, mlInfo, mlError, mlWarning);
+
   TDbcProxyLogger = class
+    protected
+      FMinMessageLevel: TMessageLevel;
     public
       procedure Error(MessageStr: String); virtual; abstract;
       procedure Warning(MessageStr: String); virtual; abstract;
       procedure Info(MessageStr: String); virtual; abstract;
       procedure Debug(MessageStr: String); virtual; abstract;
+    published
+      property MinMessageLevel: TMessageLevel read FMinMessageLevel write FMinMessageLevel;
   end;
 
   TDbcProxyWritelnLogger = class(TDbcProxyLogger)
@@ -54,28 +60,33 @@ implementation
 
 procedure TDbcProxyWritelnLogger.Error(MessageStr: String);
 begin
-  Log('Error: ' + MessageStr);
+  if FMinMessageLevel >= mlError then
+    Log('Error: ' + MessageStr);
 end;
 
 procedure TDbcProxyWritelnLogger.Warning(MessageStr: String);
 begin
-  Log('Warning: ' + MessageStr);
+  if FMinMessageLevel >= mlWarning then
+    Log('Warning: ' + MessageStr);
 end;
 
 procedure TDbcProxyWritelnLogger.Info(MessageStr: String);
 begin
-  Log('Info: ' + MessageStr);
+  if FMinMessageLevel >= mlInfo then
+    Log('Info: ' + MessageStr);
 end;
 
 procedure TDbcProxyWritelnLogger.Debug(MessageStr: String);
 begin
-  Log('Debug: ' + MessageStr);
+  if FMinMessageLevel >= mlDebug then
+    Log('Debug: ' + MessageStr);
 end;
 
 {------------------------------------------------------------------------------}
 
 constructor TDbcProxyFileLogger.Create(LogFileName: String);
 begin
+  FMinMessageLevel := mlWarning;
   FFileOpened := False;
   AssignFile(FLogFile, LogFileName);
   if FileExists(LogFileName) then
