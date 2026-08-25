@@ -2322,13 +2322,13 @@ begin
     if StrLen_or_IndPtr^ >= 0 then begin
       SetCapacity(StrLen_or_IndPtr^);
       OffSetPtr := @FDataRefAddress^.VarLenData.Data;
-      for i := 1 to StrLen_or_IndPtr^ div MaxBufSize do begin
-        Success := SQL_SUCCESS_WITH_INFO = PlainDriver.SQLGetData(StmtHandle, ColumnNumber, SQL_C_WCHAR, OffSetPtr, MaxBufSize, StrLen_or_IndPtr);
+      while (OffSetPtr - @FDataRefAddress^.VarLenData.Data < FDataRefAddress.VarLenData.Len) do 
+      begin
+        Ret := PlainDriver.SQLGetData(StmtHandle, ColumnNumber, SQL_C_WCHAR, OffSetPtr, MaxBufSize, StrLen_or_IndPtr);
+        Success := (Ret = SQL_SUCCESS) or (Ret = SQL_SUCCESS_WITH_INFO);
         Assert(Success);
         Inc(OffSetPtr, (MaxBufSize-SizeOf(WideChar)));
       end;
-      Success := PlainDriver.SQLGetData(StmtHandle, ColumnNumber, SQL_C_WCHAR, OffSetPtr, MaxBufSize, StrLen_or_IndPtr) = SQL_SUCCESS;
-      Assert(Success);
     end else begin
       Assert(StrLen_or_IndPtr^ = SQL_NO_TOTAL);
       SetCapacity(MaxBufSize);
